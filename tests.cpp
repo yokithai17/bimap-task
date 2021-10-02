@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 
 TEST(bimap, leak_check) {
-  bimap<int, int> b;
+  bimap<unsigned long, unsigned long> b;
 
   std::mt19937 e(std::random_device{}());
   for (size_t i = 0; i < 10000; i++) {
@@ -122,6 +122,34 @@ TEST(bimap, at_or_default) {
   EXPECT_EQ(b.at_left(0), 1000);
 }
 
+TEST(bimap, end_flip) {
+  bimap<int, int> b;
+  EXPECT_EQ(b.end_left().flip(), b.end_right());
+  EXPECT_EQ(b.end_right().flip(), b.end_left());
+
+  b.insert(1, 2);
+  b.insert(-3, 5);
+  b.insert(1000, -100000);
+
+  EXPECT_EQ(b.end_left().flip(), b.end_right());
+  EXPECT_EQ(b.end_right().flip(), b.end_left());
+}
+
+TEST(bimap, total_flip) {
+  bimap<int, int> b;
+  b.insert(100, -100);
+  b.insert(-100, 100);
+  b.insert(-10, 10);
+  b.insert(-12, -10);
+
+  auto rit = b.begin_right();
+  auto lit = b.begin_left();
+  for (;rit != b.end_right() && lit != b.end_left(); rit++, lit++) {
+    EXPECT_EQ(lit.flip().flip(), lit);
+    EXPECT_EQ(rit.flip().flip(), rit);
+  }
+}
+
 TEST(bimap, find) {
   bimap<int, int> b;
   b.insert(3, 4);
@@ -137,8 +165,10 @@ TEST(bimap, find) {
 TEST(bimap, empty) {
   bimap<int, int> b;
   EXPECT_TRUE(b.empty());
-  b.insert(1, 1);
+  auto it = b.insert(1, 1);
   EXPECT_FALSE(b.empty());
+  b.erase_left(it);
+  EXPECT_TRUE(b.empty());
 }
 
 TEST(bimap, insert_exist) {
@@ -176,6 +206,8 @@ TEST(bimap, erase_value) {
   EXPECT_EQ(b.size(), 1);
   EXPECT_FALSE(b.erase_right(333333));
   EXPECT_EQ(b.size(), 1);
+  EXPECT_TRUE(b.erase_right(444));
+  EXPECT_TRUE(b.empty());
 }
 
 TEST(bimap, erase_range) {
@@ -235,6 +267,62 @@ TEST(bimap, upper_bound) {
   EXPECT_EQ(*b.upper_bound_right(-100), 2);
   EXPECT_EQ(b.upper_bound_right(100), b.end_right());
   EXPECT_EQ(b.upper_bound_left(400), b.end_left());
+}
+
+TEST(bimap, assigment) {
+  bimap<int, int> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+  auto b = a;
+  EXPECT_EQ(a.size(), b.size());
+  EXPECT_EQ(a, b);
+  a = a;
+  b = std::move(b);
+  EXPECT_EQ(a.size(), b.size());
+  EXPECT_EQ(a, b);
+}
+
+TEST(bimap, equivalence) {
+  bimap<int, int> a;
+  bimap<int, int> b;
+  a.insert(1, 2);
+  a.insert(3, 4);
+  b.insert(1, 2);
+  EXPECT_NE(a, b);
+
+  b.erase_left(1);
+  b.insert(1, 4);
+  b.insert(3, 2);
+  EXPECT_NE(a, b);
+
+  EXPECT_EQ(a.end_left().flip(), a.end_right());
+  EXPECT_EQ(a.end_right().flip(), a.end_left());
+}
+
+TEST(bimap, iterator_ops) {
+  bimap<int, int> b;
+  b.insert(3, 4);
+  b.insert(100, 10);
+  auto it = b.insert(-10, 100);
+
+  auto it_next = it;
+  EXPECT_EQ(it_next++, it);
+
+  EXPECT_EQ(++it, it_next--);
+  EXPECT_EQ(--it, it_next);
+}
+
+TEST(bimap, swap) {
+  bimap<int, int> b, b1;
+  b.insert(3, 4);
+  b1.insert(4, 3);
+  EXPECT_EQ(*b.find_left(3), 3);
+  EXPECT_EQ(*b1.find_right(3), 3);
+  b.swap(b1);
+  EXPECT_EQ(*b1.find_left(3), 3);
+  EXPECT_EQ(*b.find_right(3), 3);
 }
 
 template <typename T>
@@ -382,37 +470,5 @@ TEST(bimap_randomized, compare_to_two_maps) {
   std::cout << "Comparing to maps stat:" << std::endl;
   std::cout << "Performed " << ins << " insertions and " << total - ins - skip
             << " erasures. " << skip << " skipped." << std::endl;
-}
-
-TEST(bimap, assigment) {
-  bimap<int, int> a;
-  a.insert(1, 4);
-  a.insert(8, 8);
-  a.insert(25, 17);
-  a.insert(13, 37);
-  auto b = a;
-  EXPECT_EQ(a.size(), b.size());
-  EXPECT_EQ(a, b);
-  a = a;
-  b = std::move(b);
-  EXPECT_EQ(a.size(), b.size());
-  EXPECT_EQ(a, b);
-}
-
-TEST(bimap, equivalence) {
-  bimap<int, int> a;
-  bimap<int, int> b;
-  a.insert(1, 2);
-  a.insert(3, 4);
-  b.insert(1, 2);
-  EXPECT_NE(a, b);
-
-  b.erase_left(1);
-  b.insert(1, 4);
-  b.insert(3, 2);
-  EXPECT_NE(a, b);
-
-  EXPECT_EQ(a.end_left().flip(), a.end_right());
-  EXPECT_EQ(a.end_right().flip(), a.end_left());
 }
 
