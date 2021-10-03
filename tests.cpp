@@ -89,6 +89,15 @@ TEST(bimap, insert_move) {
   EXPECT_EQ(y.a, 0);
   EXPECT_EQ(b2.at_left(y2), 3);
   EXPECT_EQ(b2.at_right(3), y2);
+
+  bimap<test_object, test_object> b3;
+  test_object z(6), z1(2);
+  b3.insert(std::move(z), std::move(z1));
+  EXPECT_EQ(z.a, 0);
+  EXPECT_EQ(z1.a, 0);
+  auto it = b3.find_left(test_object(6));
+  EXPECT_EQ(it->a, 6);
+  EXPECT_EQ(it.flip()->a, 2);
 }
 
 TEST(bimap, at) {
