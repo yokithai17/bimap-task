@@ -153,7 +153,7 @@ TEST(bimap, total_flip) {
 
   auto rit = b.begin_right();
   auto lit = b.begin_left();
-  for (;rit != b.end_right() && lit != b.end_left(); rit++, lit++) {
+  for (; rit != b.end_right() && lit != b.end_left(); rit++, lit++) {
     EXPECT_EQ(lit.flip().flip(), lit);
     EXPECT_EQ(rit.flip().flip(), rit);
   }
@@ -250,7 +250,7 @@ TEST(bimap, lower_bound) {
       {1, 2}, {2, 3}, {3, 4}, {8, 16}, {32, 66}};
 
   std::shuffle(data.begin(), data.end(), std::random_device{});
-  for (auto const &p : data) {
+  for (auto const& p : data) {
     b.insert(p.first, p.second);
   }
 
@@ -268,7 +268,7 @@ TEST(bimap, upper_bound) {
       {1, 2}, {2, 3}, {3, 4}, {8, 16}, {32, 66}};
 
   std::shuffle(data.begin(), data.end(), std::random_device{});
-  for (auto const &p : data) {
+  for (auto const& p : data) {
     b.insert(p.first, p.second);
   }
 
@@ -328,7 +328,7 @@ TEST(bimap, iterating) {
   b.insert(1, 0);
   b.insert(2, 10);
   b.insert(3, 100);
-  
+
   std::vector<int> left_values;
   for (auto it = b.begin_left(); it != b.end_left(); ++it) {
     left_values.push_back(*it);
@@ -340,8 +340,7 @@ TEST(bimap, iterating) {
   }
   std::reverse(left_values_inv.begin(), left_values_inv.end());
   EXPECT_EQ(left_values, left_values_inv);
-  
-  
+
   std::vector<int> right_values;
   for (auto it = b.begin_right(); it != b.end_right(); ++it) {
     right_values.push_back(*it);
@@ -368,7 +367,7 @@ TEST(bimap, swap) {
 
 template <typename T>
 std::vector<std::pair<T, T>>
-eliminate_same(std::vector<T> &lefts, std::vector<T> &rights, std::mt19937 &e) {
+eliminate_same(std::vector<T>& lefts, std::vector<T>& rights, std::mt19937& e) {
   // std::sort(lefts.begin(), lefts.end());
   auto last = std::unique(lefts.begin(), lefts.end());
   lefts.erase(last, lefts.end());
@@ -512,4 +511,3 @@ TEST(bimap_randomized, compare_to_two_maps) {
   std::cout << "Performed " << ins << " insertions and " << total - ins - skip
             << " erasures. " << skip << " skipped." << std::endl;
 }
-

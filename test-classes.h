@@ -4,11 +4,13 @@ struct test_object {
   int a = 0;
   test_object() = default;
   explicit test_object(int b) : a(b) {}
-  test_object(test_object &&other) noexcept { std::swap(a, other.a); }
-  friend bool operator<(test_object const &c, test_object const &b) {
+  test_object(test_object&& other) noexcept {
+    std::swap(a, other.a);
+  }
+  friend bool operator<(test_object const& c, test_object const& b) {
     return c.a < b.a;
   }
-  friend bool operator==(test_object const &c, test_object const &b) {
+  friend bool operator==(test_object const& c, test_object const& b) {
     return c.a == b.a;
   }
 };
@@ -32,7 +34,9 @@ private:
     return sqrt(x.first * x.first + x.second * x.second);
   }
 
-  static double man(vec x) { return abs(x.first) + abs(x.second); }
+  static double man(vec x) {
+    return abs(x.first) + abs(x.second);
+  }
 
   distance_type type;
 };
@@ -40,14 +44,16 @@ private:
 struct non_default_constructible {
   non_default_constructible() = delete;
   explicit non_default_constructible(int b) : a(b) {}
-  non_default_constructible(non_default_constructible const &) = default;
-  friend bool operator<(non_default_constructible const &c, non_default_constructible const &b) {
+  non_default_constructible(non_default_constructible const&) = default;
+  friend bool operator<(non_default_constructible const& c,
+                        non_default_constructible const& b) {
     return c.a < b.a;
   }
-  friend bool operator==(non_default_constructible const &c, non_default_constructible const &b) {
+  friend bool operator==(non_default_constructible const& c,
+                         non_default_constructible const& b) {
     return c.a == b.a;
   }
+
 private:
   int a;
 };
-
