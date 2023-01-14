@@ -410,6 +410,44 @@ TEST(bimap, equivalence) {
   EXPECT_EQ(a.end_right().flip(), a.end_left());
 }
 
+namespace {
+struct modified_int {
+  modified_int(int a) : val(a) {}
+  bool operator==(const modified_int& rhs) const {
+    throw std::bad_function_call(); // you shouldn't use it while custom
+                                    // comparator exists
+  }
+
+  bool operator<(const modified_int& rhs) const {
+    throw std::bad_function_call(); // you shouldn't use it while custom
+                                    // comparator exists
+  }
+
+  int val;
+};
+
+struct modified_int_custom_comparator {
+public:
+  bool operator()(const modified_int& a, const modified_int& b) const {
+    return a.val < b.val;
+  }
+};
+} // namespace
+
+TEST(bimap, equivalence_with_custom_comparator) {
+  bimap<modified_int, modified_int, modified_int_custom_comparator,
+        modified_int_custom_comparator>
+      a;
+  bimap<modified_int, modified_int, modified_int_custom_comparator,
+        modified_int_custom_comparator>
+      b;
+  a.insert(1, 2);
+  a.insert(3, 4);
+  b.insert(1, 2);
+  b.insert(3, 4);
+  EXPECT_EQ(a, b);
+}
+
 TEST(bimap, iterator_ops) {
   bimap<int, int> b;
   b.insert(3, 4);
