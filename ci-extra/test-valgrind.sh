@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$' \t\n'
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 valgrind --tool=memcheck \
   --gen-suppressions=all \
