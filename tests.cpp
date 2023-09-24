@@ -1,7 +1,7 @@
-#include <random>
-
 #include "bimap.h"
 #include "test-classes.h"
+
+#include <random>
 
 TEST(bimap, leak_check) {
   bimap<unsigned long, unsigned long> b;
@@ -36,15 +36,24 @@ TEST(bimap, custom_comparator) {
 
 TEST(bimap, custom_parametrized_comparator) {
   using vec = std::pair<int, int>;
-  bimap<vec, vec, vector_compare, vector_compare> b(
-      (vector_compare(vector_compare::manhattan)));
+  bimap<vec, vec, vector_compare, vector_compare> b((vector_compare(vector_compare::manhattan)));
   b.insert({0, 1}, {35, 3});
   b.insert({20, -20}, {20, -20});
   b.insert({35, 3}, {3, -1});
   b.insert({3, -1}, {0, 1});
 
-  std::vector<vec> correct_left = {{0, 1}, {3, -1}, {35, 3}, {20, -20}};
-  std::vector<vec> correct_right = {{0, 1}, {3, -1}, {20, -20}, {35, 3}};
+  std::vector<vec> correct_left = {
+      { 0,   1},
+      { 3,  -1},
+      {35,   3},
+      {20, -20}
+  };
+  std::vector<vec> correct_right = {
+      { 0,   1},
+      { 3,  -1},
+      {20, -20},
+      {35,   3}
+  };
   auto lit = b.begin_left();
   auto rit = b.begin_right();
   for (int i = 0; i < 4; i++) {
@@ -56,6 +65,7 @@ TEST(bimap, custom_parametrized_comparator) {
 namespace {
 struct state_comparator {
   state_comparator(bool flag = false) : is_inverted(flag) {}
+
   bool operator()(int a, int b) const {
     return is_inverted ? b < a : a < b;
   }
@@ -99,7 +109,7 @@ TEST(bimap, throwing_in_copy_assignment) {
     bimap<address_checking_object, int> b;
     try {
       b = a;
-    } catch (std::runtime_error const& error) {}
+    } catch (const std::runtime_error& error) {}
     EXPECT_EQ(b.size(), 0); // Checking strong guarantee.
   }
   address_checking_object::expect_no_instances();
@@ -116,7 +126,7 @@ TEST(bimap, throwing_in_copy_constructor) {
     address_checking_object::set_copy_throw_countdown(3);
     try {
       bimap<address_checking_object, int> b = a;
-    } catch (std::runtime_error const& error) {}
+    } catch (const std::runtime_error& error) {}
   }
   address_checking_object::expect_no_instances();
 }
@@ -304,10 +314,15 @@ TEST(bimap, lower_bound) {
   bimap<int, int> b;
 
   std::vector<std::pair<int, int>> data = {
-      {1, 2}, {2, 3}, {3, 4}, {8, 16}, {32, 66}};
+      { 1,  2},
+      { 2,  3},
+      { 3,  4},
+      { 8, 16},
+      {32, 66}
+  };
 
   std::shuffle(data.begin(), data.end(), std::random_device{});
-  for (auto const& p : data) {
+  for (const auto& p : data) {
     b.insert(p.first, p.second);
   }
 
@@ -322,10 +337,15 @@ TEST(bimap, upper_bound) {
   bimap<int, int> b;
 
   std::vector<std::pair<int, int>> data = {
-      {1, 2}, {2, 3}, {3, 4}, {8, 16}, {32, 66}};
+      { 1,  2},
+      { 2,  3},
+      { 3,  4},
+      { 8, 16},
+      {32, 66}
+  };
 
   std::shuffle(data.begin(), data.end(), std::random_device{});
-  for (auto const& p : data) {
+  for (const auto& p : data) {
     b.insert(p.first, p.second);
   }
 
@@ -374,8 +394,8 @@ TEST(bimap, non_copyable_comparator) {
   class non_copyable_comparator : public std::less<int> {
   public:
     non_copyable_comparator() = default;
-    non_copyable_comparator(non_copyable_comparator const&) = delete;
-    non_copyable_comparator& operator=(non_copyable_comparator const&) = delete;
+    non_copyable_comparator(const non_copyable_comparator&) = delete;
+    non_copyable_comparator& operator=(const non_copyable_comparator&) = delete;
     non_copyable_comparator(non_copyable_comparator&&) = default;
     non_copyable_comparator& operator=(non_copyable_comparator&&) = default;
     ~non_copyable_comparator() = default;
@@ -388,8 +408,7 @@ TEST(bimap, non_copyable_comparator) {
     a.insert(25, 17);
     a.insert(13, 37);
 
-    bimap<int, int, non_copyable_comparator, non_copyable_comparator> b =
-        std::move(a);
+    bimap<int, int, non_copyable_comparator, non_copyable_comparator> b = std::move(a);
   }
 }
 
@@ -413,6 +432,7 @@ TEST(bimap, equivalence) {
 namespace {
 struct modified_int {
   modified_int(int a) : val(a) {}
+
   bool operator==(const modified_int& rhs) const {
     throw std::bad_function_call(); // you shouldn't use it while custom
                                     // comparator exists
@@ -435,12 +455,8 @@ public:
 } // namespace
 
 TEST(bimap, equivalence_with_custom_comparator) {
-  bimap<modified_int, modified_int, modified_int_custom_comparator,
-        modified_int_custom_comparator>
-      a;
-  bimap<modified_int, modified_int, modified_int_custom_comparator,
-        modified_int_custom_comparator>
-      b;
+  bimap<modified_int, modified_int, modified_int_custom_comparator, modified_int_custom_comparator> a;
+  bimap<modified_int, modified_int, modified_int_custom_comparator, modified_int_custom_comparator> b;
   a.insert(1, 2);
   a.insert(3, 4);
   b.insert(1, 2);
@@ -504,8 +520,7 @@ TEST(bimap, swap) {
 }
 
 template <typename T>
-std::vector<std::pair<T, T>>
-eliminate_same(std::vector<T>& lefts, std::vector<T>& rights, std::mt19937& e) {
+std::vector<std::pair<T, T>> eliminate_same(std::vector<T>& lefts, std::vector<T>& rights, std::mt19937& e) {
   // std::sort(lefts.begin(), lefts.end());
   auto last = std::unique(lefts.begin(), lefts.end());
   lefts.erase(last, lefts.end());
@@ -562,8 +577,7 @@ TEST(bimap_randomized, comparison) {
 }
 
 TEST(bimap_randomized, invariant_check) {
-  std::cout << "Seed used for randomized invariant test is " << seed
-            << std::endl;
+  std::cout << "Seed used for randomized invariant test is " << seed << std::endl;
   bimap<int, int> b;
 
   std::mt19937 e(seed);
@@ -598,8 +612,8 @@ TEST(bimap_randomized, invariant_check) {
     }
   }
   std::cout << "Invariant check stats:" << std::endl;
-  std::cout << "Performed " << ins << " insertions and " << total - ins - skip
-            << " erasures. " << skip << " skipped." << std::endl;
+  std::cout << "Performed " << ins << " insertions and " << total - ins - skip << " erasures. " << skip << " skipped."
+            << std::endl;
 }
 
 TEST(bimap_randomized, compare_to_two_maps) {
@@ -646,6 +660,6 @@ TEST(bimap_randomized, compare_to_two_maps) {
     }
   }
   std::cout << "Comparing to maps stat:" << std::endl;
-  std::cout << "Performed " << ins << " insertions and " << total - ins - skip
-            << " erasures. " << skip << " skipped." << std::endl;
+  std::cout << "Performed " << ins << " insertions and " << total - ins - skip << " erasures. " << skip << " skipped."
+            << std::endl;
 }

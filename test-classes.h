@@ -1,29 +1,37 @@
 #pragma once
 
+#include "gtest/gtest.h"
+
 #include <cmath>
 #include <unordered_set>
 #include <utility>
 
-#include "gtest/gtest.h"
-
 struct test_object {
   int a = 0;
   test_object() = default;
+
   explicit test_object(int b) : a(b) {}
+
   test_object(test_object&& other) noexcept {
     std::swap(a, other.a);
   }
-  friend bool operator<(test_object const& c, test_object const& b) {
+
+  friend bool operator<(const test_object& c, const test_object& b) {
     return c.a < b.a;
   }
-  friend bool operator==(test_object const& c, test_object const& b) {
+
+  friend bool operator==(const test_object& c, const test_object& b) {
     return c.a == b.a;
   }
 };
 
 struct vector_compare {
   using vec = std::pair<int, int>;
-  enum distance_type { euclidean, manhattan };
+
+  enum distance_type {
+    euclidean,
+    manhattan
+  };
 
   explicit vector_compare(distance_type p = euclidean) : type(p) {}
 
@@ -49,14 +57,16 @@ private:
 
 struct non_default_constructible {
   non_default_constructible() = delete;
+
   explicit non_default_constructible(int b) : a(b) {}
-  non_default_constructible(non_default_constructible const&) = default;
-  friend bool operator<(non_default_constructible const& c,
-                        non_default_constructible const& b) {
+
+  non_default_constructible(const non_default_constructible&) = default;
+
+  friend bool operator<(const non_default_constructible& c, const non_default_constructible& b) {
     return c.a < b.a;
   }
-  friend bool operator==(non_default_constructible const& c,
-                         non_default_constructible const& b) {
+
+  friend bool operator==(const non_default_constructible& c, const non_default_constructible& b) {
     return c.a == b.a;
   }
 
@@ -66,7 +76,7 @@ private:
 
 class address_checking_object {
 private:
-  static std::unordered_set<address_checking_object const*> addresses;
+  static std::unordered_set<const address_checking_object*> addresses;
 
   void add_instance() const;
   void remove_instance() const;
@@ -86,7 +96,7 @@ public:
 
   address_checking_object();
   /* implicit */ address_checking_object(int value);
-  address_checking_object(address_checking_object const& other);
-  address_checking_object& operator=(address_checking_object const& other);
+  address_checking_object(const address_checking_object& other);
+  address_checking_object& operator=(const address_checking_object& other);
   ~address_checking_object();
 };
