@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 #include <unordered_set>
 #include <utility>
 
@@ -20,6 +21,7 @@ public:
 
   test_object& operator=(test_object&& other) noexcept {
     std::swap(a, other.a);
+    return *this;
   }
 
   friend bool operator<(const test_object& c, const test_object& b) {

@@ -1,5 +1,9 @@
 #include "test-classes.h"
 
+#include <gtest/gtest.h>
+
+#include <stdexcept>
+
 std::unordered_set<const address_checking_object*> address_checking_object::addresses;
 
 void address_checking_object::add_instance() const {
