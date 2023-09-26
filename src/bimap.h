@@ -3,7 +3,8 @@
 #include <cstddef>
 
 template <typename Left, typename Right, typename CompareLeft, typename CompareRight>
-struct bimap {
+class bimap {
+public:
   using left_t = void;
   using right_t = void;
 
@@ -11,22 +12,23 @@ struct bimap {
 
   struct right_iterator; // По аналогии с left_iterator
 
-  struct left_iterator {
+  class left_iterator {
+  public:
     // Элемент на который сейчас ссылается итератор.
-    // Разыменование итератора end_left() неопределено.
-    // Разыменование невалидного итератора неопределено.
+    // Разыменование итератора end_left() не определено.
+    // Разыменование невалидного итератора не определено.
     const left_t& operator*() const;
     const left_t* operator->() const;
 
     // Переход к следующему по величине left'у.
-    // Инкремент итератора end_left() неопределен.
-    // Инкремент невалидного итератора неопределен.
+    // Инкремент итератора end_left() не определен.
+    // Инкремент невалидного итератора не определен.
     left_iterator& operator++();
     left_iterator operator++(int);
 
     // Переход к предыдущему по величине left'у.
-    // Декремент итератора begin_left() неопределен.
-    // Декремент невалидного итератора неопределен.
+    // Декремент итератора begin_left() не определен.
+    // Декремент невалидного итератора не определен.
     left_iterator& operator--();
     left_iterator operator--(int);
 
@@ -34,11 +36,11 @@ struct bimap {
     // Эта функция возвращает итератор на правый элемент той же пары.
     // end_left().flip() возращает end_right().
     // end_right().flip() возвращает end_left().
-    // flip() невалидного итератора неопределен.
+    // flip() невалидного итератора не определен.
     right_iterator flip() const;
   };
 
-  // Создает bimap не содержащий ни одной пары.
+  // Создает bimap, не содержащий ни одной пары.
   bimap(CompareLeft compare_left = CompareLeft(), CompareRight compare_right = CompareRight());
 
   // Конструкторы от других и присваивания
@@ -53,6 +55,8 @@ struct bimap {
   // (включая итераторы ссылающиеся на элементы следующие за последними).
   ~bimap();
 
+  friend void swap(bimap& lhs, bimap& rhs);
+
   // Вставка пары (left, right), возвращает итератор на left.
   // Если такой left или такой right уже присутствуют в bimap, вставка не
   // производится и возвращается end_left().
@@ -62,8 +66,8 @@ struct bimap {
   left_iterator insert(left_t&& left, right_t&& right);
 
   // Удаляет элемент и соответствующий ему парный.
-  // erase невалидного итератора неопределен.
-  // erase(end_left()) и erase(end_right()) неопределены.
+  // erase невалидного итератора не определен.
+  // erase(end_left()) и erase(end_right()) не определены.
   // Пусть it ссылается на некоторый элемент e.
   // erase инвалидирует все итераторы ссылающиеся на e и на элемент парный к e.
   left_iterator erase_left(left_iterator it);
@@ -121,7 +125,7 @@ struct bimap {
   // Возвращает размер бимапы (кол-во пар)
   std::size_t size() const;
 
-  // операторы сравнения
-  friend bool operator==(const bimap& a, const bimap& b);
-  friend bool operator!=(const bimap& a, const bimap& b);
+  // Операторы сравнения
+  friend bool operator==(const bimap& lhs, const bimap& rhs);
+  friend bool operator!=(const bimap& lhs, const bimap& rhs);
 };
