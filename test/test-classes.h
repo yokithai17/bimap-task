@@ -6,13 +6,21 @@
 #include <unordered_set>
 #include <utility>
 
-struct test_object {
-  int a = 0;
+class test_object {
+public:
   test_object() = default;
 
   explicit test_object(int b) : a(b) {}
 
+  test_object(const test_object&) = delete;
+
   test_object(test_object&& other) noexcept {
+    std::swap(a, other.a);
+  }
+
+  test_object& operator=(const test_object&) = delete;
+
+  test_object& operator=(test_object&& other) noexcept {
     std::swap(a, other.a);
   }
 
@@ -23,9 +31,12 @@ struct test_object {
   friend bool operator==(const test_object& c, const test_object& b) {
     return c.a == b.a;
   }
+
+  int a = 0;
 };
 
-struct vector_compare {
+class vector_compare {
+public:
   using vec = std::pair<int, int>;
 
   enum distance_type {
@@ -55,7 +66,8 @@ private:
   distance_type type;
 };
 
-struct non_default_constructible {
+class non_default_constructible {
+public:
   non_default_constructible() = delete;
 
   explicit non_default_constructible(int b) : a(b) {}
@@ -99,4 +111,68 @@ public:
   address_checking_object(const address_checking_object& other);
   address_checking_object& operator=(const address_checking_object& other);
   ~address_checking_object();
+};
+
+class state_comparator {
+public:
+  explicit state_comparator(bool flag = false) : is_inverted(flag) {}
+
+  bool operator()(int a, int b) const {
+    return is_inverted ? b < a : a < b;
+  }
+
+private:
+  bool is_inverted;
+};
+
+class non_copyable_comparator : public std::less<> {
+public:
+  non_copyable_comparator() = default;
+  non_copyable_comparator(const non_copyable_comparator&) = delete;
+  non_copyable_comparator& operator=(const non_copyable_comparator&) = delete;
+  non_copyable_comparator(non_copyable_comparator&&) = default;
+  non_copyable_comparator& operator=(non_copyable_comparator&&) = default;
+  ~non_copyable_comparator() = default;
+};
+
+class non_default_constructible_comparator : public std::less<> {
+private:
+  non_default_constructible_comparator() = default;
+
+public:
+  static non_default_constructible_comparator create() noexcept {
+    return {};
+  }
+
+  non_default_constructible_comparator(const non_default_constructible_comparator&) = default;
+  non_default_constructible_comparator& operator=(const non_default_constructible_comparator&) = default;
+  non_default_constructible_comparator(non_default_constructible_comparator&&) = default;
+  non_default_constructible_comparator& operator=(non_default_constructible_comparator&&) = default;
+  ~non_default_constructible_comparator() = default;
+};
+
+class modified_int_custom_comparator;
+
+class modified_int {
+public:
+  modified_int(int a) : val(a) {}
+
+  bool operator==(const modified_int&) const {
+    throw std::bad_function_call(); // you shouldn't use it while custom
+                                    // comparator exists
+  }
+
+  bool operator<(const modified_int&) const {
+    throw std::bad_function_call(); // you shouldn't use it while custom
+                                    // comparator exists
+  }
+
+  int val;
+};
+
+class modified_int_custom_comparator {
+public:
+  bool operator()(const modified_int& a, const modified_int& b) const {
+    return a.val < b.val;
+  }
 };

@@ -3,19 +3,25 @@
 
 #include <random>
 
-TEST(bimap, leak_check) {
-  bimap<unsigned long, unsigned long> b;
-
-  std::mt19937 e(std::random_device{}());
-  for (size_t i = 0; i < 10000; i++) {
-    b.insert(e(), e());
-  }
-}
-
 TEST(bimap, simple) {
   bimap<int, int> b;
   b.insert(4, 4);
   EXPECT_EQ(b.at_right(4), b.at_left(4));
+}
+
+TEST(bimap, leak_check) {
+  static constexpr size_t N = 10'000;
+
+  bimap<unsigned long, unsigned long> b;
+
+  std::mt19937 rng(std::mt19937::default_seed);
+  std::uniform_int_distribution<unsigned long> dist(0, N);
+
+  for (size_t i = 0; i < N; i++) {
+    unsigned long left = dist(rng);
+    unsigned long right = dist(rng);
+    b.insert(left, right);
+  }
 }
 
 TEST(bimap, custom_comparator) {
@@ -54,6 +60,7 @@ TEST(bimap, custom_parametrized_comparator) {
       {20, -20},
       {35,   3}
   };
+
   auto lit = b.begin_left();
   auto rit = b.begin_right();
   for (int i = 0; i < 4; i++) {
@@ -62,57 +69,77 @@ TEST(bimap, custom_parametrized_comparator) {
   }
 }
 
-namespace {
-struct state_comparator {
-  state_comparator(bool flag = false) : is_inverted(flag) {}
-
-  bool operator()(int a, int b) const {
-    return is_inverted ? b < a : a < b;
-  }
-
-private:
-  bool is_inverted;
-};
-} // namespace
-
 TEST(bimap, state_comparator) {
   bimap<int, int, state_comparator, state_comparator> a(state_comparator(true));
   a.insert(1, 2);
   a.insert(3, 4);
   a.insert(5, 6);
-  auto copy = a;
-  EXPECT_EQ(a, copy);
+  EXPECT_EQ(*a.begin_left(), 5);
+  EXPECT_EQ(*a.begin_right(), 2);
+
+  auto a_copy = a;
+  EXPECT_EQ(a, a_copy);
+
+  bimap<int, int, state_comparator, state_comparator> b(state_comparator(false), state_comparator(true));
+  b.insert(11, 12);
+  b.insert(13, 14);
+  b.insert(15, 16);
+  EXPECT_EQ(*b.begin_left(), 11);
+  EXPECT_EQ(*b.begin_right(), 16);
+
+  using std::swap;
+  swap(a, b);
+  EXPECT_EQ(*a.begin_left(), 11);
+  EXPECT_EQ(*a.begin_right(), 16);
+  EXPECT_EQ(*b.begin_left(), 5);
+  EXPECT_EQ(*b.begin_right(), 2);
+}
+
+TEST(bimap, non_copyable_comparator) {
+  bimap<int, int, non_copyable_comparator, non_copyable_comparator> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap<int, int, non_copyable_comparator, non_copyable_comparator> b = std::move(a);
+  EXPECT_EQ(b.size(), 4);
+  EXPECT_NE(a.size(), 4);
+
+  a = std::move(b);
+  EXPECT_EQ(a.size(), 4);
+  EXPECT_NE(b.size(), 4);
+}
+
+TEST(bimap, non_default_constructible_comparator) {
+  using cmp = non_default_constructible_comparator;
+
+  bimap<int, int, cmp, cmp> a(cmp::create(), cmp::create());
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap<int, int, cmp, cmp> b = a;
+  EXPECT_EQ(a, b);
+
+  bimap<int, int, cmp, cmp> c = std::move(a);
+  EXPECT_EQ(b, c);
 }
 
 TEST(bimap, copies) {
   bimap<int, int> b;
   b.insert(3, 4);
-  bimap<int, int> b1(b);
+
+  bimap<int, int> b1 = b;
   EXPECT_EQ(*b.find_left(3).flip(), 4);
+
   b1.insert(4, 5);
   EXPECT_EQ(b.find_left(4), b.end_left());
 
   b1.insert(10, -10);
   b = b1;
   EXPECT_NE(b.find_right(-10), b.end_right());
-}
-
-TEST(bimap, throwing_in_copy_assignment) {
-  {
-    bimap<address_checking_object, int> a;
-    a.insert(1, 2);
-    a.insert(3, 4);
-    a.insert(5, 6);
-    a.insert(7, 8);
-    a.insert(9, 10);
-    address_checking_object::set_copy_throw_countdown(3);
-    bimap<address_checking_object, int> b;
-    try {
-      b = a;
-    } catch (const std::runtime_error& error) {}
-    EXPECT_EQ(b.size(), 0); // Checking strong guarantee.
-  }
-  address_checking_object::expect_no_instances();
 }
 
 TEST(bimap, throwing_in_copy_constructor) {
@@ -123,10 +150,30 @@ TEST(bimap, throwing_in_copy_constructor) {
     a.insert(5, 6);
     a.insert(7, 8);
     a.insert(9, 10);
+
     address_checking_object::set_copy_throw_countdown(3);
     try {
       bimap<address_checking_object, int> b = a;
     } catch (const std::runtime_error& error) {}
+  }
+  address_checking_object::expect_no_instances();
+}
+
+TEST(bimap, throwing_in_copy_assignment) {
+  {
+    bimap<address_checking_object, int> a;
+    a.insert(1, 2);
+    a.insert(3, 4);
+    a.insert(5, 6);
+    a.insert(7, 8);
+    a.insert(9, 10);
+
+    address_checking_object::set_copy_throw_countdown(3);
+    bimap<address_checking_object, int> b;
+    try {
+      b = a;
+    } catch (const std::runtime_error& error) {}
+    EXPECT_EQ(b.size(), 0); // Checking strong guarantee.
   }
   address_checking_object::expect_no_instances();
 }
@@ -241,28 +288,33 @@ TEST(bimap, find) {
 TEST(bimap, empty) {
   bimap<int, int> b;
   EXPECT_TRUE(b.empty());
+
   auto it = b.insert(1, 1);
   EXPECT_FALSE(b.empty());
   b.erase_left(it);
   EXPECT_TRUE(b.empty());
 }
 
-TEST(bimap, insert_exist) {
+TEST(bimap, insert_exists) {
   bimap<int, int> b;
   b.insert(1, 2);
   b.insert(2, 3);
   b.insert(3, 4);
   EXPECT_EQ(b.size(), 3);
+
   auto it = b.insert(2, -1);
   EXPECT_EQ(it, b.end_left());
+  EXPECT_EQ(b.at_left(2), 3);
   EXPECT_EQ(b.size(), 3);
 }
 
 TEST(bimap, erase_iterator) {
   bimap<int, int> b;
+
   auto it = b.insert(1, 2);
   b.insert(5, 10);
   b.insert(100, 200);
+
   auto it1 = b.erase_left(it);
   EXPECT_EQ(b.size(), 2);
   EXPECT_EQ(*it1, 5);
@@ -311,8 +363,6 @@ TEST(bimap, erase_range) {
 }
 
 TEST(bimap, lower_bound) {
-  bimap<int, int> b;
-
   std::vector<std::pair<int, int>> data = {
       { 1,  2},
       { 2,  3},
@@ -321,21 +371,25 @@ TEST(bimap, lower_bound) {
       {32, 66}
   };
 
-  std::shuffle(data.begin(), data.end(), std::random_device{});
-  for (const auto& p : data) {
-    b.insert(p.first, p.second);
-  }
+  std::sort(data.begin(), data.end());
 
-  EXPECT_EQ(*b.lower_bound_left(5), 8);
-  EXPECT_EQ(*b.lower_bound_right(4), 4);
-  EXPECT_EQ(*b.lower_bound_left(4).flip(), 16);
-  EXPECT_EQ(b.lower_bound_right(100), b.end_right());
-  EXPECT_EQ(b.lower_bound_left(100), b.end_left());
+  do {
+    bimap<int, int> b;
+
+    for (const auto& p : data) {
+      b.insert(p.first, p.second);
+    }
+
+    EXPECT_EQ(*b.lower_bound_left(5), 8);
+    EXPECT_EQ(*b.lower_bound_right(4), 4);
+    EXPECT_EQ(*b.lower_bound_left(4).flip(), 16);
+    EXPECT_EQ(b.lower_bound_right(100), b.end_right());
+    EXPECT_EQ(b.lower_bound_left(100), b.end_left());
+
+  } while (std::next_permutation(data.begin(), data.end()));
 }
 
 TEST(bimap, upper_bound) {
-  bimap<int, int> b;
-
   std::vector<std::pair<int, int>> data = {
       { 1,  2},
       { 2,  3},
@@ -344,115 +398,146 @@ TEST(bimap, upper_bound) {
       {32, 66}
   };
 
-  std::shuffle(data.begin(), data.end(), std::random_device{});
-  for (const auto& p : data) {
-    b.insert(p.first, p.second);
-  }
+  std::sort(data.begin(), data.end());
 
-  EXPECT_EQ(*b.upper_bound_left(5), 8);
-  EXPECT_EQ(*b.upper_bound_right(-100), 2);
-  EXPECT_EQ(b.upper_bound_right(100), b.end_right());
-  EXPECT_EQ(b.upper_bound_left(400), b.end_left());
+  do {
+    bimap<int, int> b;
+
+    for (const auto& p : data) {
+      b.insert(p.first, p.second);
+    }
+
+    EXPECT_EQ(*b.upper_bound_left(5), 8);
+    EXPECT_EQ(*b.upper_bound_right(-100), 2);
+    EXPECT_EQ(b.upper_bound_right(100), b.end_right());
+    EXPECT_EQ(b.upper_bound_left(400), b.end_left());
+
+  } while (std::next_permutation(data.begin(), data.end()));
 }
 
-TEST(bimap, assigment) {
+TEST(bimap, copy_ctor) {
   bimap<int, int> a;
   a.insert(1, 4);
   a.insert(8, 8);
   a.insert(25, 17);
   a.insert(13, 37);
+
   auto b = a;
   EXPECT_EQ(a.size(), b.size());
   EXPECT_EQ(a, b);
-  a = a;
-  b = std::move(b);
+}
+
+TEST(bimap, copy_assignment) {
+  bimap<int, int> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap<int, int> b;
+  b.insert(2, 5);
+  b.insert(5, 2);
+
+  b = a;
   EXPECT_EQ(a.size(), b.size());
   EXPECT_EQ(a, b);
 }
 
-TEST(bimap, moving) {
-  {
-    bimap<int, int> a;
-    a.insert(1, 4);
-    a.insert(8, 8);
-    a.insert(25, 17);
-    a.insert(13, 37);
-    bimap<int, int> a_copy = a;
-    bimap<int, int> b = std::move(a);
-    EXPECT_EQ(b.size(), 4);
-    EXPECT_EQ(b, a_copy);
+TEST(bimap, copy_assignment_self) {
+  bimap<int, int> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
 
-    bimap<int, int> c;
-    c = std::move(b);
-    EXPECT_EQ(c.size(), 4);
-    EXPECT_EQ(c, a_copy);
-  } // `a` and `b` should be destroyed correctly
+  bimap<int, int> a_copy = a;
+  a = a;
+  EXPECT_EQ(a.size(), a_copy.size());
+  EXPECT_EQ(a, a_copy);
 }
 
-/* Lev said that non-copyable comparator is ok here. */
-TEST(bimap, non_copyable_comparator) {
-  class non_copyable_comparator : public std::less<int> {
-  public:
-    non_copyable_comparator() = default;
-    non_copyable_comparator(const non_copyable_comparator&) = delete;
-    non_copyable_comparator& operator=(const non_copyable_comparator&) = delete;
-    non_copyable_comparator(non_copyable_comparator&&) = default;
-    non_copyable_comparator& operator=(non_copyable_comparator&&) = default;
-    ~non_copyable_comparator() = default;
-  };
+TEST(bimap, move_ctor) {
+  bimap<address_checking_object, int> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
 
   {
-    bimap<int, int, non_copyable_comparator, non_copyable_comparator> a;
-    a.insert(1, 4);
-    a.insert(8, 8);
-    a.insert(25, 17);
-    a.insert(13, 37);
+    bimap<address_checking_object, int> a_copy = a;
+    address_checking_object::set_copy_throw_countdown(1);
 
-    bimap<int, int, non_copyable_comparator, non_copyable_comparator> b = std::move(a);
+    bimap<address_checking_object, int> b = std::move(a);
+    EXPECT_EQ(b.size(), a_copy.size());
+    EXPECT_EQ(b, a_copy);
   }
+
+  address_checking_object::expect_no_instances();
+  address_checking_object::set_copy_throw_countdown(0);
+}
+
+TEST(bimap, move_assignment) {
+  bimap<address_checking_object, int> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap<address_checking_object, int> b;
+  b.insert(2, 5);
+  b.insert(5, 2);
+
+  bimap<address_checking_object, int> a_copy = a;
+  address_checking_object::set_copy_throw_countdown(1);
+
+  b = std::move(a);
+  EXPECT_EQ(b.size(), a_copy.size());
+  EXPECT_EQ(b, a_copy);
+
+  address_checking_object::set_copy_throw_countdown(0);
+}
+
+TEST(bimap, move_assignment_self) {
+  bimap<int, int> a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap<int, int> a_copy = a;
+  a = std::move(a);
+  EXPECT_EQ(a.size(), a_copy.size());
+  EXPECT_EQ(a, a_copy);
 }
 
 TEST(bimap, equivalence) {
   bimap<int, int> a;
   bimap<int, int> b;
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+
   a.insert(1, 2);
   a.insert(3, 4);
   b.insert(1, 2);
-  EXPECT_NE(a, b);
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
 
   b.erase_left(1);
   b.insert(1, 4);
   b.insert(3, 2);
-  EXPECT_NE(a, b);
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
 
   EXPECT_EQ(a.end_left().flip(), a.end_right());
   EXPECT_EQ(a.end_right().flip(), a.end_left());
+
+  a.erase_left(1);
+  a.erase_right(4);
+  a.insert(3, 2);
+  a.insert(1, 4);
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
 }
-
-namespace {
-struct modified_int {
-  modified_int(int a) : val(a) {}
-
-  bool operator==(const modified_int& rhs) const {
-    throw std::bad_function_call(); // you shouldn't use it while custom
-                                    // comparator exists
-  }
-
-  bool operator<(const modified_int& rhs) const {
-    throw std::bad_function_call(); // you shouldn't use it while custom
-                                    // comparator exists
-  }
-
-  int val;
-};
-
-struct modified_int_custom_comparator {
-public:
-  bool operator()(const modified_int& a, const modified_int& b) const {
-    return a.val < b.val;
-  }
-};
-} // namespace
 
 TEST(bimap, equivalence_with_custom_comparator) {
   bimap<modified_int, modified_int, modified_int_custom_comparator, modified_int_custom_comparator> a;
@@ -461,7 +546,20 @@ TEST(bimap, equivalence_with_custom_comparator) {
   a.insert(3, 4);
   b.insert(1, 2);
   b.insert(3, 4);
-  EXPECT_EQ(a, b);
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+}
+
+TEST(bimap, iterator_traits) {
+  using bm = bimap<int, double>;
+  static_assert(std::bidirectional_iterator<bm::left_iterator>);
+  static_assert(std::bidirectional_iterator<bm::right_iterator>);
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::value_type, int>));
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::value_type, double>));
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::reference, const int&>));
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::reference, const double&>));
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::pointer, const int*>));
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::pointer, const double*>));
 }
 
 TEST(bimap, iterator_ops) {
@@ -514,10 +612,14 @@ TEST(bimap, swap) {
   b1.insert(4, 3);
   EXPECT_EQ(*b.find_left(3), 3);
   EXPECT_EQ(*b1.find_right(3), 3);
-  b.swap(b1);
+
+  using std::swap;
+  swap(b, b1);
   EXPECT_EQ(*b1.find_left(3), 3);
   EXPECT_EQ(*b.find_right(3), 3);
 }
+
+namespace {
 
 template <typename T>
 std::vector<std::pair<T, T>> eliminate_same(std::vector<T>& lefts, std::vector<T>& rights, std::mt19937& e) {
@@ -542,8 +644,10 @@ std::vector<std::pair<T, T>> eliminate_same(std::vector<T>& lefts, std::vector<T
   return res;
 }
 
-template struct bimap<int, non_default_constructible>;
-template struct bimap<non_default_constructible, int>;
+} // namespace
+
+template class bimap<int, non_default_constructible>;
+template class bimap<non_default_constructible, int>;
 
 static constexpr uint32_t seed = 1488228;
 
