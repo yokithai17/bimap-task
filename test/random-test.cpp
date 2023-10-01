@@ -32,9 +32,6 @@ std::vector<std::pair<T, T>> eliminate_same(std::vector<T>& lefts, std::vector<T
 
 } // namespace
 
-template class bimap<int, non_default_constructible>;
-template class bimap<non_default_constructible, int>;
-
 static constexpr uint32_t seed = 1488228;
 
 TEST(bimap_randomized, comparison) {

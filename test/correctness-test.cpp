@@ -5,6 +5,9 @@
 
 #include <random>
 
+template class bimap<int, non_default_constructible>;
+template class bimap<non_default_constructible, int>;
+
 TEST(bimap, simple) {
   bimap<int, int> b;
   b.insert(4, 4);

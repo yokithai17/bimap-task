@@ -73,6 +73,7 @@ public:
   explicit non_default_constructible(int b) : a(b) {}
 
   non_default_constructible(const non_default_constructible&) = default;
+  non_default_constructible& operator=(const non_default_constructible&) = default;
 
   friend bool operator<(const non_default_constructible& c, const non_default_constructible& b) {
     return c.a < b.a;
@@ -104,12 +105,14 @@ public:
 
   static void set_copy_throw_countdown(size_t new_countdown);
 
-  /* implicit */ operator int() const;
+  operator int() const;
 
   address_checking_object();
-  /* implicit */ address_checking_object(int value);
+  address_checking_object(int value);
+
   address_checking_object(const address_checking_object& other);
   address_checking_object& operator=(const address_checking_object& other);
+
   ~address_checking_object();
 };
 
@@ -128,10 +131,13 @@ private:
 class non_copyable_comparator : public std::less<> {
 public:
   non_copyable_comparator() = default;
+
   non_copyable_comparator(const non_copyable_comparator&) = delete;
-  non_copyable_comparator& operator=(const non_copyable_comparator&) = delete;
   non_copyable_comparator(non_copyable_comparator&&) = default;
+
+  non_copyable_comparator& operator=(const non_copyable_comparator&) = delete;
   non_copyable_comparator& operator=(non_copyable_comparator&&) = default;
+
   ~non_copyable_comparator() = default;
 };
 
@@ -145,9 +151,11 @@ public:
   }
 
   non_default_constructible_comparator(const non_default_constructible_comparator&) = default;
-  non_default_constructible_comparator& operator=(const non_default_constructible_comparator&) = default;
   non_default_constructible_comparator(non_default_constructible_comparator&&) = default;
+
+  non_default_constructible_comparator& operator=(const non_default_constructible_comparator&) = default;
   non_default_constructible_comparator& operator=(non_default_constructible_comparator&&) = default;
+
   ~non_default_constructible_comparator() = default;
 };
 
