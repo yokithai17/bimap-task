@@ -263,6 +263,19 @@ TEST(bimap, end_flip) {
   EXPECT_EQ(b.end_right().flip(), b.end_left());
 }
 
+TEST(bimap, end_flip_with_state_comparator) {
+  bimap<int, int, state_comparator, state_comparator> b;
+  EXPECT_EQ(b.end_left().flip(), b.end_right());
+  EXPECT_EQ(b.end_right().flip(), b.end_left());
+
+  b.insert(1, 2);
+  b.insert(-3, 5);
+  b.insert(1000, -100000);
+
+  EXPECT_EQ(b.end_left().flip(), b.end_right());
+  EXPECT_EQ(b.end_right().flip(), b.end_left());
+}
+
 TEST(bimap, total_flip) {
   bimap<int, int> b;
   b.insert(100, -100);
