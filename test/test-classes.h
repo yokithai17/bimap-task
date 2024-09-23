@@ -9,7 +9,8 @@ class test_object {
 public:
   test_object() = default;
 
-  explicit test_object(int b) : a(b) {}
+  explicit test_object(int b)
+      : a(b) {}
 
   test_object(const test_object&) = delete;
 
@@ -44,7 +45,8 @@ public:
     manhattan
   };
 
-  explicit vector_compare(distance_type p = euclidean) : type(p) {}
+  explicit vector_compare(distance_type p = euclidean)
+      : type(p) {}
 
   bool operator()(vec a, vec b) const {
     if (type == euclidean) {
@@ -70,7 +72,8 @@ class non_default_constructible {
 public:
   non_default_constructible() = delete;
 
-  explicit non_default_constructible(int b) : a(b) {}
+  explicit non_default_constructible(int b)
+      : a(b) {}
 
   non_default_constructible(const non_default_constructible&) = default;
   non_default_constructible& operator=(const non_default_constructible&) = default;
@@ -118,7 +121,8 @@ public:
 
 class state_comparator {
 public:
-  explicit state_comparator(bool flag = false) : is_inverted(flag) {}
+  explicit state_comparator(bool flag = false)
+      : is_inverted(flag) {}
 
   bool operator()(int a, int b) const {
     return is_inverted ? b < a : a < b;
@@ -163,7 +167,8 @@ class modified_int_custom_comparator;
 
 class modified_int {
 public:
-  modified_int(int a) : val(a) {}
+  modified_int(int a)
+      : val(a) {}
 
   bool operator==(const modified_int&) const {
     throw std::bad_function_call(); // you shouldn't use it while custom

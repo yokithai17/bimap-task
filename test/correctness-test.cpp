@@ -53,18 +53,8 @@ TEST(bimap, custom_parametrized_comparator) {
   b.insert({35, 3}, {3, -1});
   b.insert({3, -1}, {0, 1});
 
-  std::vector<vec> correct_left = {
-      { 0,   1},
-      { 3,  -1},
-      {35,   3},
-      {20, -20}
-  };
-  std::vector<vec> correct_right = {
-      { 0,   1},
-      { 3,  -1},
-      {20, -20},
-      {35,   3}
-  };
+  std::vector<vec> correct_left = {{0, 1}, {3, -1}, {35, 3}, {20, -20}};
+  std::vector<vec> correct_right = {{0, 1}, {3, -1}, {20, -20}, {35, 3}};
 
   auto lit = b.begin_left();
   auto rit = b.begin_right();
@@ -393,13 +383,7 @@ TEST(bimap, erase_range) {
 }
 
 TEST(bimap, lower_bound) {
-  std::vector<std::pair<int, int>> data = {
-      { 1,  2},
-      { 2,  3},
-      { 3,  4},
-      { 8, 16},
-      {32, 66}
-  };
+  std::vector<std::pair<int, int>> data = {{1, 2}, {2, 3}, {3, 4}, {8, 16}, {32, 66}};
 
   std::sort(data.begin(), data.end());
 
@@ -435,13 +419,7 @@ TEST(bimap, lower_bound_non_copyable) {
 }
 
 TEST(bimap, upper_bound) {
-  std::vector<std::pair<int, int>> data = {
-      { 1,  2},
-      { 2,  3},
-      { 3,  4},
-      { 8, 16},
-      {32, 66}
-  };
+  std::vector<std::pair<int, int>> data = {{1, 2}, {2, 3}, {3, 4}, {8, 16}, {32, 66}};
 
   std::sort(data.begin(), data.end());
 
@@ -613,12 +591,12 @@ TEST(bimap, iterator_traits) {
   using bm = bimap<int, double>;
   static_assert(std::bidirectional_iterator<bm::left_iterator>);
   static_assert(std::bidirectional_iterator<bm::right_iterator>);
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::value_type, int>));
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::value_type, double>));
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::reference, const int&>));
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::reference, const double&>));
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::pointer, const int*>));
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::pointer, const double*>));
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::value_type, int>) );
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::value_type, double>) );
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::reference, const int&>) );
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::reference, const double&>) );
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::pointer, const int*>) );
+  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::pointer, const double*>) );
 }
 
 TEST(bimap, iterator_ops) {

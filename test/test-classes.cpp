@@ -57,11 +57,13 @@ address_checking_object::address_checking_object() {
   add_instance();
 }
 
-address_checking_object::address_checking_object(int value) : value(value) {
+address_checking_object::address_checking_object(int value)
+    : value(value) {
   add_instance();
 }
 
-address_checking_object::address_checking_object(const address_checking_object& other) : value(other.value) {
+address_checking_object::address_checking_object(const address_checking_object& other)
+    : value(other.value) {
   process_copying();
   add_instance();
 }
