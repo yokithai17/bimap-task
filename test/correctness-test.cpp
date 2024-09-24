@@ -603,12 +603,18 @@ TEST(bimap, iterator_traits) {
   using bm = bimap<int, double>;
   static_assert(std::bidirectional_iterator<bm::left_iterator>);
   static_assert(std::bidirectional_iterator<bm::right_iterator>);
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::value_type, int>) );
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::value_type, double>) );
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::reference, const int&>) );
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::reference, const double&>) );
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::left_iterator>::pointer, const int*>) );
-  EXPECT_TRUE((std::is_same_v<std::iterator_traits<bm::right_iterator>::pointer, const double*>) );
+  static_assert(std::is_same_v<std::iterator_traits<bm::left_iterator>::value_type, int>);
+  static_assert(std::is_same_v<std::iterator_traits<bm::right_iterator>::value_type, double>);
+  static_assert(std::is_same_v<std::iterator_traits<bm::left_iterator>::reference, const int&>);
+  static_assert(std::is_same_v<std::iterator_traits<bm::right_iterator>::reference, const double&>);
+  static_assert(std::is_same_v<std::iterator_traits<bm::left_iterator>::pointer, const int*>);
+  static_assert(std::is_same_v<std::iterator_traits<bm::right_iterator>::pointer, const double*>);
+}
+
+TEST(bimap, iterator_sizeof) {
+  using bm = bimap<int, double>;
+  static_assert(sizeof(bm::left_iterator) <= sizeof(void*));
+  static_assert(sizeof(bm::right_iterator) <= sizeof(void*));
 }
 
 TEST(bimap, iterator_ops) {
