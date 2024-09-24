@@ -9,8 +9,8 @@ class test_object {
 public:
   test_object() = default;
 
-  explicit test_object(int b)
-      : a(b) {}
+  explicit test_object(int value)
+      : a(value) {}
 
   test_object(const test_object&) = delete;
 
@@ -25,12 +25,12 @@ public:
     return *this;
   }
 
-  friend bool operator<(const test_object& c, const test_object& b) {
-    return c.a < b.a;
+  friend bool operator<(const test_object& lhs, const test_object& rhs) {
+    return lhs.a < rhs.a;
   }
 
-  friend bool operator==(const test_object& c, const test_object& b) {
-    return c.a == b.a;
+  friend bool operator==(const test_object& lhs, const test_object& rhs) {
+    return lhs.a == rhs.a;
   }
 
   int a = 0;
@@ -48,11 +48,11 @@ public:
   explicit vector_compare(distance_type p = euclidean)
       : type(p) {}
 
-  bool operator()(vec a, vec b) const {
+  bool operator()(vec lhs, vec rhs) const {
     if (type == euclidean) {
-      return euc(a) < euc(b);
+      return euc(lhs) < euc(rhs);
     } else {
-      return man(a) < man(b);
+      return man(lhs) < man(rhs);
     }
   }
 
@@ -72,18 +72,18 @@ class non_default_constructible {
 public:
   non_default_constructible() = delete;
 
-  explicit non_default_constructible(int b)
-      : a(b) {}
+  explicit non_default_constructible(int value)
+      : a(value) {}
 
   non_default_constructible(const non_default_constructible&) = default;
   non_default_constructible& operator=(const non_default_constructible&) = default;
 
-  friend bool operator<(const non_default_constructible& c, const non_default_constructible& b) {
-    return c.a < b.a;
+  friend bool operator<(const non_default_constructible& lhs, const non_default_constructible& rhs) {
+    return lhs.a < rhs.a;
   }
 
-  friend bool operator==(const non_default_constructible& c, const non_default_constructible& b) {
-    return c.a == b.a;
+  friend bool operator==(const non_default_constructible& lhs, const non_default_constructible& rhs) {
+    return lhs.a == rhs.a;
   }
 
 private:
@@ -124,8 +124,12 @@ public:
   explicit state_comparator(bool flag = false)
       : is_inverted(flag) {}
 
-  bool operator()(int a, int b) const {
-    return is_inverted ? b < a : a < b;
+  bool operator()(int lhs, int rhs) const {
+    if (is_inverted) {
+      return rhs < lhs;
+    } else {
+      return lhs < rhs;
+    }
   }
 
 private:
@@ -167,8 +171,8 @@ class modified_int_custom_comparator;
 
 class modified_int {
 public:
-  modified_int(int a)
-      : val(a) {}
+  modified_int(int value)
+      : val(value) {}
 
   bool operator==(const modified_int&) const {
     throw std::bad_function_call(); // you shouldn't use it while custom
@@ -185,7 +189,7 @@ public:
 
 class modified_int_custom_comparator {
 public:
-  bool operator()(const modified_int& a, const modified_int& b) const {
-    return a.val < b.val;
+  bool operator()(const modified_int& lhs, const modified_int& rhs) const {
+    return lhs.val < rhs.val;
   }
 };
