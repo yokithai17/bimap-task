@@ -525,6 +525,45 @@ TEST(bimap, move_ctor) {
   address_checking_object::set_copy_throw_countdown(0);
 }
 
+TEST(bimap, move_ctor_expiring_comparator) {
+  using bimap = bimap<int, int, expiring_comparator, expiring_comparator>;
+
+  bimap a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap a_copy = a;
+
+  bimap b = std::move(a);
+  EXPECT_EQ(b, a_copy);
+}
+
+TEST(bimap, move_ctor_tracking_comparator) {
+  using bimap = bimap<int, int, tracking_comparator, tracking_comparator>;
+
+  bool cmp_left = false;
+  bool cmp_right = false;
+
+  bimap a(tracking_comparator{&cmp_left}, tracking_comparator{&cmp_right});
+  a.insert(1, 4);
+  a.insert(8, 8);
+
+  bimap b = std::move(a);
+
+  cmp_left = cmp_right = false;
+
+  EXPECT_EQ(b.at_left(1), 4);
+  EXPECT_EQ(b.at_left(8), 8);
+  EXPECT_TRUE(cmp_left);
+  EXPECT_FALSE(cmp_right);
+
+  EXPECT_EQ(b.at_right(4), 1);
+  EXPECT_EQ(b.at_right(8), 8);
+  EXPECT_TRUE(cmp_right);
+}
+
 TEST(bimap, move_assignment) {
   bimap<address_checking_object, int> a;
   a.insert(1, 4);
@@ -557,6 +596,58 @@ TEST(bimap, move_assignment_self) {
   a = std::move(a);
   EXPECT_EQ(a.size(), a_copy.size());
   EXPECT_EQ(a, a_copy);
+}
+
+TEST(bimap, move_assignment_expiring_comparator) {
+  using bimap = bimap<int, int, expiring_comparator, expiring_comparator>;
+
+  bimap a;
+  a.insert(1, 4);
+  a.insert(8, 8);
+  a.insert(25, 17);
+  a.insert(13, 37);
+
+  bimap b;
+  b.insert(2, 5);
+  b.insert(5, 2);
+
+  bimap a_copy = a;
+
+  b = std::move(a);
+  EXPECT_EQ(b, a_copy);
+}
+
+TEST(bimap, move_assignment_tracking_comparator) {
+  using bimap = bimap<int, int, tracking_comparator, tracking_comparator>;
+
+  bool cmp1_left = false;
+  bool cmp1_right = false;
+
+  bimap a(tracking_comparator{&cmp1_left}, tracking_comparator{&cmp1_right});
+  a.insert(1, 4);
+  a.insert(8, 8);
+
+  bool cmp2_left = false;
+  bool cmp2_right = false;
+  bimap b(tracking_comparator{&cmp2_left}, tracking_comparator{&cmp2_right});
+  b.insert(2, 5);
+  b.insert(5, 2);
+
+  b = std::move(a);
+
+  cmp1_left = cmp1_right = cmp2_left = cmp2_right = false;
+
+  EXPECT_EQ(b.at_left(1), 4);
+  EXPECT_EQ(b.at_left(8), 8);
+  EXPECT_TRUE(cmp1_left);
+  EXPECT_FALSE(cmp1_right);
+
+  EXPECT_EQ(b.at_right(4), 1);
+  EXPECT_EQ(b.at_right(8), 8);
+  EXPECT_TRUE(cmp1_right);
+
+  EXPECT_FALSE(cmp2_left);
+  EXPECT_FALSE(cmp2_right);
 }
 
 TEST(bimap, equivalence) {
@@ -674,4 +765,35 @@ TEST(bimap, swap) {
   swap(b, b1);
   EXPECT_EQ(*b1.find_left(3), 3);
   EXPECT_EQ(*b.find_right(3), 3);
+}
+
+TEST(bimap, swap_tracking_comparator) {
+  using bimap = bimap<int, int, tracking_comparator, tracking_comparator>;
+
+  bool cmp1_left = false;
+  bool cmp1_right = false;
+  bool cmp2_left = false;
+  bool cmp2_right = false;
+
+  bimap b1(tracking_comparator{&cmp1_left}, tracking_comparator{&cmp1_right});
+  bimap b2(tracking_comparator{&cmp2_left}, tracking_comparator{&cmp2_right});
+  b2.insert(3, 4);
+  b2.insert(4, 5);
+
+  using std::swap;
+  swap(b1, b2);
+
+  cmp1_left = cmp1_right = cmp2_left = cmp2_right = false;
+
+  EXPECT_EQ(b1.at_left(3), 4);
+  EXPECT_EQ(b1.at_left(4), 5);
+  EXPECT_TRUE(cmp2_left);
+  EXPECT_FALSE(cmp2_right);
+
+  EXPECT_EQ(b1.at_right(4), 3);
+  EXPECT_EQ(b1.at_right(5), 4);
+  EXPECT_TRUE(cmp2_right);
+
+  EXPECT_FALSE(cmp1_left);
+  EXPECT_FALSE(cmp1_right);
 }

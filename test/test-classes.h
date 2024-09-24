@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <functional>
+#include <stdexcept>
 #include <unordered_set>
 #include <utility>
 
@@ -209,4 +210,51 @@ public:
   bool operator()(const incomparable_int& lhs, const incomparable_int& rhs) const {
     return lhs.val < rhs.val;
   }
+};
+
+class expiring_comparator {
+public:
+  expiring_comparator() = default;
+
+  expiring_comparator(const expiring_comparator&) = default;
+
+  expiring_comparator(expiring_comparator&& other) noexcept
+      : has_expired(std::exchange(other.has_expired, true)) {}
+
+  expiring_comparator& operator=(const expiring_comparator&) = default;
+
+  expiring_comparator& operator=(expiring_comparator&& other) noexcept {
+    if (this != &other) {
+      has_expired = std::exchange(other.has_expired, true);
+    }
+    return *this;
+  }
+
+  ~expiring_comparator() = default;
+
+  template <typename L, typename R>
+  bool operator()(L&& left, R&& right) const {
+    if (has_expired) {
+      throw std::runtime_error("Attempt to call an expired comparator");
+    }
+    return std::less<>()(std::forward<L>(left), std::forward<R>(right));
+  }
+
+private:
+  bool has_expired = false;
+};
+
+class tracking_comparator {
+public:
+  explicit tracking_comparator(bool* called)
+      : called(called) {}
+
+  template <typename L, typename R>
+  bool operator()(L&& left, R&& right) const {
+    *called = true;
+    return std::less<>()(std::forward<L>(left), std::forward<R>(right));
+  }
+
+private:
+  bool* called;
 };
