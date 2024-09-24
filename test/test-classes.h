@@ -120,7 +120,7 @@ private:
   static std::unordered_set<const address_checking_object*> addresses;
 
   void add_instance() const;
-  void remove_instance() const;
+  void remove_instance(bool nothrow = false) const;
   void assert_exists() const;
 
   int value;
@@ -141,7 +141,7 @@ public:
   address_checking_object(const address_checking_object& other);
   address_checking_object& operator=(const address_checking_object& other);
 
-  ~address_checking_object();
+  ~address_checking_object() noexcept(false);
 };
 
 class state_comparator {

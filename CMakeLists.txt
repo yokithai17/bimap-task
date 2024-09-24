@@ -3,7 +3,7 @@ project(bimap)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(GTest REQUIRED)
+find_package(Catch2 REQUIRED)
 
 file(GLOB SOLUTION_SRC src/*.cpp src/*.h)
 file(GLOB TEST_SRC test/*.cpp test/*.h)
@@ -65,4 +65,4 @@ if(USE_THREAD_SANITIZER)
   target_link_options(tests PUBLIC -fsanitize=thread)
 endif()
 
-target_link_libraries(tests GTest::gtest GTest::gtest_main)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)

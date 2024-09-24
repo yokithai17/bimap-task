@@ -1,9 +1,10 @@
 #include "bimap.h"
 #include "test-classes.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <map>
 #include <random>
 
 namespace {
@@ -35,8 +36,8 @@ std::vector<std::pair<T, T>> eliminate_same(std::vector<T>& lefts, std::vector<T
 
 static constexpr uint32_t seed = 1488228;
 
-TEST(bimap_randomized, comparison) {
-  std::cout << "Seed used for randomized compare test is " << seed << std::endl;
+TEST_CASE("[Randomized] - Comparison") {
+  INFO("Seed used for randomized compare test is " << seed);
 
   bimap<uint32_t, uint32_t> b1;
   bimap<uint32_t, uint32_t> b2;
@@ -60,16 +61,16 @@ TEST(bimap_randomized, comparison) {
     b2.insert(p.first, p.second);
   }
 
-  EXPECT_EQ(b1.size(), b2.size());
-  EXPECT_EQ(b1, b2);
+  CHECK(b1.size() == b2.size());
+  CHECK(b1 == b2);
 }
 
-TEST(bimap_randomized, invariant_check) {
-  std::cout << "Seed used for randomized invariant test is " << seed << std::endl;
+TEST_CASE("[Randomized] - Check invariants") {
+  INFO("Seed used for randomized invariant test is " << seed);
   bimap<int, int> b;
 
   std::mt19937 e(seed);
-  size_t ins = 0, skip = 0, total = 50000;
+  size_t ins = 0, skip = 0, total = 50'000;
   for (size_t i = 0; i < total; i++) {
     auto op = e() % 10;
     if (op > 2) {
@@ -89,29 +90,28 @@ TEST(bimap_randomized, invariant_check) {
     if (i % 100 == 0) {
       int previous = *b.begin_left();
       for (auto it = ++b.begin_left(); it != b.end_left(); it++) {
-        EXPECT_GT(*it, previous);
+        CHECK(previous < *it);
         previous = *it;
       }
       previous = *b.begin_right();
       for (auto it = ++b.begin_right(); it != b.end_right(); it++) {
-        EXPECT_GT(*it, previous);
+        CHECK(previous < *it);
         previous = *it;
       }
     }
   }
-  std::cout << "Invariant check stats:" << std::endl;
-  std::cout << "Performed " << ins << " insertions and " << total - ins - skip << " erasures. " << skip << " skipped."
-            << std::endl;
+  INFO("Invariant check stats:");
+  INFO("Performed " << ins << " insertions and " << total - ins - skip << " erasures. " << skip << " skipped.");
 }
 
-TEST(bimap_randomized, compare_to_two_maps) {
-  std::cout << "Seed used for randomized cmp2map test is " << seed << std::endl;
+TEST_CASE("[Randomized] - Compare to 2 maps") {
+  INFO("Seed used for randomized cmp2map test is " << seed);
 
   bimap<int, int> b;
   std::map<int, int> left_view, right_view;
 
   std::mt19937 e(seed);
-  size_t ins = 0, skip = 0, total = 60000;
+  size_t ins = 0, skip = 0, total = 60'000;
   for (size_t i = 0; i < total; i++) {
     unsigned int op = e() % 10;
     if (op > 2) {
@@ -131,23 +131,22 @@ TEST(bimap_randomized, compare_to_two_maps) {
       while (it == b.end_left()) {
         it = b.lower_bound_left(e());
       }
-      EXPECT_EQ(left_view.erase(*it), 1);
-      EXPECT_EQ(right_view.erase(*it.flip()), 1);
+      CHECK(left_view.erase(*it) == 1);
+      CHECK(right_view.erase(*it.flip()) == 1);
       b.erase_left(it);
     }
     if (i % 100 == 0) {
       // check
-      EXPECT_EQ(b.size(), left_view.size());
-      EXPECT_EQ(b.size(), right_view.size());
+      CHECK(b.size() == left_view.size());
+      CHECK(b.size() == right_view.size());
       auto lit = b.begin_left();
       auto mlit = left_view.begin();
       for (; lit != b.end_left() && mlit != left_view.end(); lit++, mlit++) {
-        EXPECT_EQ(*lit, mlit->first);
-        EXPECT_EQ(*lit.flip(), mlit->second);
+        CHECK(*lit == mlit->first);
+        CHECK(*lit.flip() == mlit->second);
       }
     }
   }
-  std::cout << "Comparing to maps stat:" << std::endl;
-  std::cout << "Performed " << ins << " insertions and " << total - ins - skip << " erasures. " << skip << " skipped."
-            << std::endl;
+  INFO("Comparing to maps stat:");
+  INFO("Performed " << ins << " insertions and " << total - ins - skip << " erasures. " << skip << " skipped.");
 }

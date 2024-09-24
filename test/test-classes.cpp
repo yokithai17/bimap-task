@@ -1,6 +1,6 @@
 #include "test-classes.h"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 #include <stdexcept>
 
@@ -9,28 +9,32 @@ std::unordered_set<const address_checking_object*> address_checking_object::addr
 void address_checking_object::add_instance() const {
   auto [it, was_inserted] = addresses.insert(this);
   if (!was_inserted) {
-    FAIL() << "New object is created at the address " << static_cast<const void*>(this)
-           << " while the previous object at this address was not destroyed";
+    // clang-format off
+    FAIL(
+        "New object is created at the address " << static_cast<const void*>(this)
+        << " while the previous object at this address was not destroyed"
+    );
+    // clang-format on
   }
 }
 
-void address_checking_object::remove_instance() const {
+void address_checking_object::remove_instance(bool nothrow) const {
   size_t erased_count = addresses.erase(this);
-  if (erased_count != 1) {
-    FAIL() << "Destroying non-existing object at the address " << static_cast<const void*>(this);
+  if (!nothrow && erased_count != 1) {
+    FAIL("Destroying non-existing object at the address " << static_cast<const void*>(this));
   }
 }
 
 void address_checking_object::assert_exists() const {
   if (!addresses.contains(this)) {
-    FAIL() << "Accessing an non-existing object at address " << static_cast<const void*>(this);
+    FAIL("Accessing an non-existing object at address " << static_cast<const void*>(this));
   }
 }
 
 void address_checking_object::expect_no_instances() {
   if (!addresses.empty()) {
     addresses.clear();
-    FAIL() << "Not all instances are destroyed";
+    FAIL("Not all instances are destroyed");
   }
 }
 
@@ -76,6 +80,6 @@ address_checking_object& address_checking_object::operator=(const address_checki
   return *this;
 }
 
-address_checking_object::~address_checking_object() {
-  remove_instance();
+address_checking_object::~address_checking_object() noexcept(false) {
+  remove_instance(std::uncaught_exceptions() > 0);
 }
