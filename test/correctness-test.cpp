@@ -589,8 +589,10 @@ TEST(bimap, equivalence) {
 }
 
 TEST(bimap, equivalence_with_custom_comparator) {
-  bimap<modified_int, modified_int, modified_int_custom_comparator, modified_int_custom_comparator> a;
-  bimap<modified_int, modified_int, modified_int_custom_comparator, modified_int_custom_comparator> b;
+  using element = incomparable_int;
+  using comparator = incomparable_int_custom_comparator;
+  bimap<element, element, comparator, comparator> a;
+  bimap<element, element, comparator, comparator> b;
   a.insert(1, 2);
   a.insert(3, 4);
   b.insert(1, 2);

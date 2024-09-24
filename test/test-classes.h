@@ -191,29 +191,22 @@ public:
   ~non_default_constructible_comparator() = default;
 };
 
-class modified_int_custom_comparator;
+class incomparable_int_custom_comparator;
 
-class modified_int {
+class incomparable_int {
 public:
-  modified_int(int value)
+  incomparable_int(int value)
       : val(value) {}
 
-  bool operator==(const modified_int&) const {
-    throw std::bad_function_call(); // you shouldn't use it while custom
-                                    // comparator exists
-  }
-
-  bool operator<(const modified_int&) const {
-    throw std::bad_function_call(); // you shouldn't use it while custom
-                                    // comparator exists
-  }
-
+private:
   int val;
+
+  friend class incomparable_int_custom_comparator;
 };
 
-class modified_int_custom_comparator {
+class incomparable_int_custom_comparator {
 public:
-  bool operator()(const modified_int& lhs, const modified_int& rhs) const {
+  bool operator()(const incomparable_int& lhs, const incomparable_int& rhs) const {
     return lhs.val < rhs.val;
   }
 };
