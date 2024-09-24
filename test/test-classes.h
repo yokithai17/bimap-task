@@ -90,6 +90,30 @@ private:
   int a;
 };
 
+class non_copy_assignable {
+public:
+  non_copy_assignable()
+      : a(0) {}
+
+  explicit non_copy_assignable(int value)
+      : a(value) {}
+
+  non_copy_assignable(const non_copy_assignable&) = default;
+
+  non_copy_assignable& operator=(const non_copy_assignable&) = delete;
+
+  friend bool operator<(const non_copy_assignable& lhs, const non_copy_assignable& rhs) {
+    return lhs.a < rhs.a;
+  }
+
+  friend bool operator==(const non_copy_assignable& lhs, const non_copy_assignable& rhs) {
+    return lhs.a == rhs.a;
+  }
+
+private:
+  int a;
+};
+
 class address_checking_object {
 private:
   static std::unordered_set<const address_checking_object*> addresses;

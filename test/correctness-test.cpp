@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <random>
 
 template class bimap<int, non_default_constructible>;
@@ -238,6 +239,17 @@ TEST(bimap, at_or_default) {
   EXPECT_EQ(b.at_right_or_default(1000), 0);
   // (0, 1) is replaced with (0, 1000)
   EXPECT_EQ(b.at_left(0), 1000);
+}
+
+TEST(bimap, at_or_default_non_copy_assignable) {
+  bimap<non_copy_assignable, non_copy_assignable> b;
+  b.insert(non_copy_assignable(4), non_copy_assignable(2));
+
+  EXPECT_EQ(b.at_left_or_default(non_copy_assignable(4)), non_copy_assignable(2));
+  EXPECT_EQ(b.at_right_or_default(non_copy_assignable(2)), non_copy_assignable(4));
+
+  EXPECT_EQ(b.at_left_or_default(non_copy_assignable(5)), non_copy_assignable(0));
+  EXPECT_EQ(b.at_right_or_default(non_copy_assignable(1)), non_copy_assignable(0));
 }
 
 TEST(bimap, end_flip) {
