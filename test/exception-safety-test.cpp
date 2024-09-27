@@ -38,17 +38,17 @@ public:
 
   ~element() = default;
 
-  friend bool operator==(const element& lhs, const element& rhs) {
+  [[maybe_unused]] friend bool operator==(const element& lhs, const element& rhs) {
     fault_injection_point();
     return lhs.value == rhs.value;
   }
 
-  friend auto operator<=>(const element& lhs, const element& rhs) {
+  [[maybe_unused]] friend auto operator<=>(const element& lhs, const element& rhs) {
     fault_injection_point();
     return lhs.value <=> rhs.value;
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const element& e) {
+  [[maybe_unused]] friend std::ostream& operator<<(std::ostream& out, const element& e) {
     return out << e.value;
   }
 
