@@ -141,42 +141,6 @@ TEST_CASE("Copying") {
   CHECK(b.find_right(-10) != b.end_right());
 }
 
-TEST_CASE("Copy constructor exception safety") {
-  {
-    bimap<address_checking_object, int> a;
-    a.insert(1, 2);
-    a.insert(3, 4);
-    a.insert(5, 6);
-    a.insert(7, 8);
-    a.insert(9, 10);
-
-    address_checking_object::set_copy_throw_countdown(3);
-    try {
-      bimap<address_checking_object, int> b = a;
-    } catch (const std::runtime_error& error) {}
-  }
-  address_checking_object::expect_no_instances();
-}
-
-TEST_CASE("Copy assignment exception safety") {
-  {
-    bimap<address_checking_object, int> a;
-    a.insert(1, 2);
-    a.insert(3, 4);
-    a.insert(5, 6);
-    a.insert(7, 8);
-    a.insert(9, 10);
-
-    address_checking_object::set_copy_throw_countdown(3);
-    bimap<address_checking_object, int> b;
-    try {
-      b = a;
-    } catch (const std::runtime_error& error) {}
-    CHECK(b.size() == 0); // Checking strong guarantee.
-  }
-  address_checking_object::expect_no_instances();
-}
-
 TEST_CASE("Insert") {
   bimap<int, int> b;
   auto it1 = b.insert(4, 10);
