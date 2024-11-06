@@ -22,17 +22,9 @@ public:
     value = other.value;
   }
 
-  element(element&& other) noexcept
-      : value(std::exchange(other.value, -1)) {}
-
   element& operator=(const element& other) {
     fault_injection_point();
     value = other.value;
-    return *this;
-  }
-
-  element& operator=(element&& other) noexcept {
-    value = std::exchange(other.value, -1);
     return *this;
   }
 
