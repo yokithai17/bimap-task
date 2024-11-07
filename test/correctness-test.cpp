@@ -239,15 +239,21 @@ TEST_CASE("At-or-default") {
   CHECK(b.at_right_or_default(1) == 0);
   CHECK(b.at_left(0) == 1);
 
-  // b has (5, 0)
-  CHECK(b.at_left_or_default(42) == 0);
-  // (5, 0) is replaced with (42, 0)
+  CHECK(b.at_left_or_default(42) == 0); // (5, 0) is replaced with (42, 0)
   CHECK(b.at_right(0) == 42);
+  CHECK(b.at_left(42) == 0);
 
-  // b has (0, 1)
-  CHECK(b.at_right_or_default(1000) == 0);
-  // (0, 1) is replaced with (0, 1000)
+  CHECK(b.at_left_or_default(-42) == 0); // (42, 0) is replaced with (-42, 0)
+  CHECK(b.at_right(0) == -42);
+  CHECK(b.at_left(-42) == 0);
+
+  CHECK(b.at_right_or_default(1000) == 0); // (0, 1) is replaced with (0, 1000)
   CHECK(b.at_left(0) == 1000);
+  CHECK(b.at_right(1000) == 0);
+
+  CHECK(b.at_right_or_default(-1000) == 0); // (0, 1000) is replaced with (0, -1000)
+  CHECK(b.at_left(0) == -1000);
+  CHECK(b.at_right(-1000) == 0);
 }
 
 TEST_CASE("At-or-default does not invoke copy assignment") {
