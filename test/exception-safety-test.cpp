@@ -22,11 +22,7 @@ public:
     value = other.value;
   }
 
-  element& operator=(const element& other) {
-    fault_injection_point();
-    value = other.value;
-    return *this;
-  }
+  element& operator=(const element& other) = delete;
 
   ~element() = default;
 
