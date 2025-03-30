@@ -278,3 +278,16 @@ TEST_CASE("At-or-default is exception-safe") {
     strong_exception_safety([&a] { a.at_right_or_default(1000); }, a);
   });
 }
+
+TEST_CASE("insert with move semantics provides strong exception guarantee") {
+  int counter = 0;
+  using Bimap = bimap<counter_moved, counter_moved, expiring_comparator, expiring_comparator>;
+  counter_moved elem(&counter);
+  expiring_comparator cmp(true);
+
+  Bimap a;
+  a.insert(std::move(elem), counter_moved(2, &counter));
+
+  REQUIRE_THROWS(a.insert(counter_moved(3, &counter), counter_moved(4, &counter)));
+  REQUIRE(counter == 0);
+}

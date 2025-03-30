@@ -258,3 +258,56 @@ public:
 private:
   bool* called;
 };
+
+class counter_moved {
+public:
+  static constexpr int MOVED_DATA = -1;
+  counter_moved() = default;
+
+  explicit counter_moved(int* counter)
+      : counter(counter) {}
+
+  explicit counter_moved(int data, int* counter) noexcept
+      : counter(counter)
+      , data(data) {}
+
+  counter_moved(counter_moved&& other) noexcept
+      : data(std::exchange(other.data, MOVED_DATA)) {
+    other.inc_count();
+  }
+
+  counter_moved(const counter_moved& other) noexcept
+      : data(other.data) {}
+
+  counter_moved& operator=(const counter_moved& other) noexcept {
+    if (this != &other) {
+      data = other.data;
+    }
+    return *this;
+  }
+
+  counter_moved& operator=(counter_moved&& other) noexcept {
+    if (this != &other) {
+      other.inc_count();
+      data = std::exchange(other.data, MOVED_DATA);
+    }
+    return *this;
+  }
+
+  bool operator<(const counter_moved& other) const noexcept {
+    return data < other.data;
+  }
+
+  void inc_count() noexcept;
+
+  void enable_count() noexcept;
+
+  void disable_count() noexcept;
+
+  bool valid_data() const noexcept;
+
+private:
+  int* counter{nullptr};
+  int data{0};
+  bool enable_counter{true};
+};

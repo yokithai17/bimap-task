@@ -83,3 +83,21 @@ address_checking_object& address_checking_object::operator=(const address_checki
 address_checking_object::~address_checking_object() noexcept(false) {
   remove_instance(std::uncaught_exceptions() > 0);
 }
+
+void counter_moved::inc_count() noexcept {
+  if (counter != nullptr && enable_counter) {
+    ++(*counter);
+  }
+}
+
+void counter_moved::enable_count() noexcept {
+  enable_counter = true;
+}
+
+void counter_moved::disable_count() noexcept {
+  enable_counter = false;
+}
+
+bool counter_moved::valid_data() const noexcept {
+  return data != MOVED_DATA;
+}
