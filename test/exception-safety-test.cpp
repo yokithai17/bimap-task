@@ -285,9 +285,13 @@ TEST_CASE("insert with move semantics provides strong exception guarantee") {
   counter_moved elem(&counter);
   expiring_comparator cmp(true);
 
-  Bimap a;
-  a.insert(std::move(elem), counter_moved(2, &counter));
+  Bimap a(cmp, cmp);
+  elem.disable_count();
+  a.insert(elem, elem);
+  elem.enable_count();
 
+  REQUIRE_THROWS(a.insert(std::move(elem), std::move(elem)));
+  REQUIRE(elem.valid_data());
   REQUIRE_THROWS(a.insert(counter_moved(3, &counter), counter_moved(4, &counter)));
   REQUIRE(counter == 0);
 }
